@@ -28,12 +28,8 @@ def parse(json_dict, filename):
                     if len(listofvalues) > 0  :
                         resolution = listofvalues[0]
                         recursive_parse = parse(resolution, ref_uri_filename)
-                        print resolution
-                        if recursive_parse is None:
-                            return resolution
-                        else:
-                            print recursive_parse
-                            return resolution
+                        return resolution
+                        
 
             # just parse the value
             # and if the return is not None -> replace object. that's a $ref being replaced.
@@ -50,9 +46,10 @@ def parse(json_dict, filename):
                 json_dict[key] = resolved
     return None
 
-filename  = 'main.4.schema.json'
+#filename  = 'main.4.schema.json'
 #filename  = 'test_schema.json'
 #filename = 'ref_schema.json'
+filename = 'schema1.json'
 dicT = json.load(open(filename))
 #dicT = json.load(open('test_schema.json'))
 
