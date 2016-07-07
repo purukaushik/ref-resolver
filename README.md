@@ -37,4 +37,88 @@ Example from the hubble telescope tutorial - https://spacetelescope.github.io/un
           "id": "test_schema.json"
      }
 	 
+ ref_schema.json
  
+    {
+      "id" : "ref_schema.json",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+    
+      "definitions": {
+        "address": {
+          "type": "object",
+          "properties": {
+            "street_address": { "type": "string" },
+            "city":           { "type": "string" },
+            "state":          { "type": "string" },
+			"code" : {"$ref": "#/definitions/code"}
+          },
+          "required": ["street_address", "city", "state"]
+        },
+          "code" : {
+    	  "type" : "string"
+          }
+      },
+    
+      "type": "object",
+      "properties" : {}
+    
+    }
+
+Post-inlining:
+
+test_schema.json
+
+    {
+        "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+        "required": [
+            "shipping_address"
+        ],
+        "type": "object",
+        "properties": {
+            "billing_address": {
+                "required": [
+                    "street_address",
+                    "city",
+                    "state"
+                ],
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "street_address": {
+                        "type": "string"
+                    }
+                }
+            },
+            "shipping_address": {
+                "required": [
+                    "street_address",
+                    "city",
+                    "state"
+                ],
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "street_address": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "id": "test_schema.json"
+    }
