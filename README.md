@@ -26,14 +26,14 @@ Example from the hubble telescope tutorial - https://spacetelescope.github.io/un
           ],
           "properties": {
             "shipping_address": {
-              "$ref": "ref_schema.json#\/definitions\/address"
+              "$ref": "ref_schema.json#/definitions/address"
             },
             "billing_address": {
-              "$ref": "ref_schema.json#\/definitions\/address"
+              "$ref": "ref_schema.json#/definitions/address"
             }
           },
           "type": "object",
-          "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+          "$schema": "http://json-schema.org/draft-04/schema#",
           "id": "test_schema.json"
      }
 	 
@@ -69,7 +69,7 @@ Post-inlining:
 test_schema.json
 
     {
-        "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+        "$schema": "http://json-schema.org/draft-04/schema#",
         "required": [
             "shipping_address"
         ],
