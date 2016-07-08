@@ -4,15 +4,12 @@ A python API to resolve `$ref` pointers in json-schemas and inline them. Support
 ## Example code invocation
 
     import json
-	from ref_resolver import resolve
-	
-	# grab python dict from json schema files
-	json_schema_file = json.loads('/path/to/your/example-schema.json')
-	
-	# call to API resolve method
-	resolve(json_schema_file)
-	
-	# dict is now inlined with all $ref removed
+    from ref_inliner import resolve
+    # grab python dict from json schema files
+    json_schema_file = json.loa(d'/path/to/your/example-schema.json')
+    # call to API resolve method
+    resolve(json_schema_file)
+    # dict is now inlined with all $ref removed
 
 ## Example inlining
 
