@@ -2,7 +2,7 @@ import simplejson as json
 from os.path import isfile
 import jsonpath_rw
 
-def parse(json_dict, filename):
+def resolve(json_dict, filename):
     # must be one of -> string, dictionary, list
     if isinstance(json_dict, dict):
         # if it is a dictionary, iterate thru all key,value pairs
@@ -23,17 +23,17 @@ def parse(json_dict, filename):
 
                     if len(listofvalues) > 0:
                         resolution = listofvalues[0]
-                        recursive_parse = parse(resolution, ref_uri_filename)
+                        recursive_parse = resolve(resolution, ref_uri_filename)
                         return resolution
             # just parse the value
             # and if the return is not None -> replace object. that's a $ref being replaced.
-            resolved = parse(value, filename)
+            resolved = resolve(value, filename)
             if resolved is not None:
                 json_dict[key] = resolved
     elif isinstance(json_dict, list):
         for (key, value) in enumerate(json_dict):
 
-            resolved = parse(value, filename)
+            resolved = resolve(value, filename)
             if resolved is not None:
                 json_dict[key] = resolved
     return None
