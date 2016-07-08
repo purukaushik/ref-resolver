@@ -11,18 +11,18 @@ def resolve(json_dict, filename):
             if key == "$ref":
                 uri_fragments = value.split("#")
                 ref_uri_filename = uri_fragments[0]
-                refpath = uri_fragments[1]
+                ref_path = uri_fragments[1]
 
                 if not ref_uri_filename.strip():
                     ref_uri_filename = filename
                 if isfile(ref_uri_filename):
-                    jsondump = json.load(open(ref_uri_filename))
-                    refpathexpr = "$" + ".".join(refpath.split("/"))
-                    pathexpr = jsonpath_rw.parse(refpathexpr)
-                    listofvalues = [match.value for match in pathexpr.find(jsondump)]
+                    json_dump = json.load(open(ref_uri_filename))
+                    ref_path_expr = "$" + ".".join(ref_path.split("/"))
+                    path_expr = jsonpath_rw.parse(ref_path_expr)
+                    list_of_values = [match.value for match in path_expr.find(json_dump)]
 
-                    if len(listofvalues) > 0:
-                        resolution = listofvalues[0]
+                    if len(list_of_values) > 0:
+                        resolution = list_of_values[0]
                         recursive_parse = resolve(resolution, ref_uri_filename)
                         return resolution
             # just parse the value
