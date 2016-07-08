@@ -1,3 +1,5 @@
 /_test_/**
 /.idea/**
 *.json
+*.pyc
+ref_resolver_client.py
