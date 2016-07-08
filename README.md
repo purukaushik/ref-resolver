@@ -6,7 +6,7 @@ A python API to resolve `$ref` pointers in json-schemas and inline them. Support
     import json
 	from ref-resolver import resolve
 	
-	# grab python dict from json schema filea
+	# grab python dict from json schema files
 	json-schema-file = json.loads('/path/to/your/example-schema.json')
 	
 	# call to API resolve method
