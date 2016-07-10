@@ -20,7 +20,6 @@ class RefResolver:
                 if key == "$ref":
                     ref_frag = urlparse(value)
                     ref_file = ref_frag.netloc + ref_frag.path
-                    print "ref_file: " + ref_file
 
                     if self.url_fragments.scheme in ['http', 'https']:
                         #todo: get file from http request
@@ -28,20 +27,27 @@ class RefResolver:
                     elif self.url_fragments.scheme == 'file':
 
                         if isfile(ref_file):
+                            # if the ref is another file -> go there and get it
                             json_dump = json.load(open(ref_file))
                             ref_id = None
                             if 'id' in json_dump:
                                 ref_id = json_dump['id']
 
                             RefResolver(ref_id).resolve(json_dump)
-                            ref_path_expr = "$" + ".".join(self.url_fragments.fragment.split("/"))
-                            path_expression = jsonpath_rw.parse(ref_path_expr)
-                            list_of_values = [match.value for match in path_expression.find(json_dump)]
+                        else:
+                            # if the ref is in the same file grab it from the same file
+                            json_dump = json.load(open(self.url_fragments.netloc+self.url_fragments.path))
+                        print ref_frag
+                        ref_path_expr = "$" + ".".join(ref_frag.fragment.split("/"))
+                        print ref_path_expr
+                        path_expression = jsonpath_rw.parse(ref_path_expr)
+                        list_of_values = [match.value for match in path_expression.find(json_dump)]
 
-                            if len(list_of_values) > 0:
-                                resolution = list_of_values[0]
-                                print resolution
-                                return resolution
+                        if len(list_of_values) > 0:
+                            resolution = list_of_values[0]
+                            print ""
+                            print resolution
+                            return resolution
 
                 resolved = self.resolve(value)
                 if resolved is not None:
