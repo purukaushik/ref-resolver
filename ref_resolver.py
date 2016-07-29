@@ -37,16 +37,12 @@ class RefResolver:
                         else:
                             # if the ref is in the same file grab it from the same file
                             json_dump = json.load(open(self.url_fragments.netloc+self.url_fragments.path))
-                        print ref_frag
                         ref_path_expr = "$" + ".".join(ref_frag.fragment.split("/"))
-                        print ref_path_expr
                         path_expression = jsonpath_rw.parse(ref_path_expr)
                         list_of_values = [match.value for match in path_expression.find(json_dump)]
 
                         if len(list_of_values) > 0:
                             resolution = list_of_values[0]
-                            print ""
-                            print resolution
                             return resolution
 
                 resolved = self.resolve(value)
