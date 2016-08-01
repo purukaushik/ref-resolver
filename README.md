@@ -1,5 +1,5 @@
 # ref-resolver
-A python API to resolve `$ref` pointers in json-schemas and inline them. Supports relative file paths in $ref.
+A python API to resolve `$ref` pointers in json-schemas and inline them. Supports relative file paths in `$ref`.
 
 ## Example code invocation
 
