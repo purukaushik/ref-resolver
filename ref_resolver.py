@@ -1,7 +1,11 @@
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 import simplejson as json
 from os.path import isfile
 import jsonpath_rw
+import requests
+
+
+cache = {}
 
 class RefResolver:
 
@@ -9,10 +13,13 @@ class RefResolver:
         self.url_fragments = None
 
     def __init__(self, id):
+        self.id = id
         if id is not None:
             self.url_fragments = urlparse(id)
         else:
             self.url_fragments = None
+
+
 
     def resolve(self, json_obj):
         if isinstance(json_obj, dict):
@@ -20,30 +27,45 @@ class RefResolver:
                 if key == "$ref":
                     ref_frag = urlparse(value)
                     ref_file = ref_frag.netloc + ref_frag.path
-
-                    if self.url_fragments.scheme in ['http', 'https']:
-                        #todo: get file from http request
-                        pass
-                    elif self.url_fragments.scheme == 'file':
-
-                        if isfile(ref_file):
-                            # if the ref is another file -> go there and get it
-                            json_dump = json.load(open(ref_file))
+                    json_dump = {}
+                    if ref_file in cache:
+                        json_dump = cache[ref_file]
+                    else:
+                        if self.url_fragments.scheme in ['http', 'https']:
+                            ref_url = urljoin(self.id, ref_file)
+                            if callable(requests.Response.json):
+                                json_dump = requests.get(ref_url).json()
+                            else:
+                                json_dump = requests.get(ref_url).json
                             ref_id = None
                             if 'id' in json_dump:
                                 ref_id = json_dump['id']
-
+                            print ref_id
+                            cache[ref_file] = json_dump
                             RefResolver(ref_id).resolve(json_dump)
-                        else:
-                            # if the ref is in the same file grab it from the same file
-                            json_dump = json.load(open(self.url_fragments.netloc+self.url_fragments.path))
-                        ref_path_expr = "$" + ".".join(ref_frag.fragment.split("/"))
-                        path_expression = jsonpath_rw.parse(ref_path_expr)
-                        list_of_values = [match.value for match in path_expression.find(json_dump)]
+                            cache[ref_file] = json_dump
+                        elif self.url_fragments.scheme == 'file':
+                            if isfile(ref_file):
+                                # if the ref is another file -> go there and get it
+                                json_dump = json.load(open(ref_file))
+                                ref_id = None
+                                if 'id' in json_dump:
+                                    ref_id = json_dump['id']
+                                cache[ref_file] = json_dump
+                                RefResolver(ref_id).resolve(json_dump)
+                                cache[ref_file] = json_dump
+                            else:
+                                # if the ref is in the same file grab it from the same file
+                                json_dump = json.load(open(self.url_fragments.netloc+self.url_fragments.path))
+                                cache[ref_file] = json_dump
 
-                        if len(list_of_values) > 0:
-                            resolution = list_of_values[0]
-                            return resolution
+                    ref_path_expr = "$" + ".".join(ref_frag.fragment.split("/"))
+                    path_expression = jsonpath_rw.parse(ref_path_expr)
+                    list_of_values = [match.value for match in path_expression.find(json_dump)]
+
+                    if len(list_of_values) > 0:
+                        resolution = list_of_values[0]
+                        return resolution
 
                 resolved = self.resolve(value)
                 if resolved is not None:
