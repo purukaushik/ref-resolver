@@ -40,7 +40,6 @@ class RefResolver:
                             ref_id = None
                             if 'id' in json_dump:
                                 ref_id = json_dump['id']
-                            print ref_id
                             cache[ref_file] = json_dump
                             RefResolver(ref_id).resolve(json_dump)
                             cache[ref_file] = json_dump
