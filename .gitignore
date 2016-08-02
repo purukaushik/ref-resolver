@@ -3,3 +3,4 @@
 *.json
 *.pyc
 ref_resolver_client.py
+/build/**
