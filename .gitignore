@@ -4,3 +4,5 @@
 *.pyc
 ref_resolver_client.py
 /build/**
+/dist/**
+/ref_resolver.egg-info/**
