@@ -11,5 +11,5 @@ setup(name='ref-resolver',
       url='https://github.com/purukaushik/ref-resolver',
       download_url='https://github.com/purukaushik/ref-resolver.git',
       packages=find_packages(),
-      install_requires=['simplejson']
+      install_requires=['simplejson', 'jsonpath_rw']
      )
