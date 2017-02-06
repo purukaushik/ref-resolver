@@ -29,6 +29,8 @@ class RefResolver:
         if isinstance(json_obj, dict):
             for key, value in json_obj.items():
                 if key == "$ref":
+                    print "DEBUG: ", key, value
+                    print "DEBUG: ", self.url_fragments
                     ref_frag = urlparse(value)
                     ref_file = ref_frag.netloc + ref_frag.path
                     json_dump = {}
