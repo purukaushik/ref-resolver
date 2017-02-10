@@ -7,3 +7,4 @@ ref_resolver_client.py
 /dist/**
 /ref_resolver.egg-info/**
 /.DS_Store
+/venv/**
