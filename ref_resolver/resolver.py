@@ -11,22 +11,22 @@ logging.basicConfig(level=logging.DEBUG)
 
 def debug(message):
     logging.debug(message)
+
     
 def info(message):
     logging.info(message)
     
 cache = {}
 
+
 class IdError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
+
     
 class URLFragment(object):
-
-    def __init__(self):
-        self.url_fragments = None
 
     def __init__(self, id_):
         self.id = id_
@@ -39,15 +39,19 @@ class URLFragment(object):
         return repr(self.id + ", " + str(self.url_fragments))
 
 
-def resolveInFile(fragment, fileObj):
-    debug("resolveInFile:: fragment->" + fragment)
-    path_expr = jsonpath_rw.parse("$" + ".".join(fragment.split("/")))
+def resolveInFile(jsonpath, fileObj):
+    """
+    Run through the `fileObj` json dict for the json path in `fragment` and return the object under the path.
+    """
+    path_expr = jsonpath_rw.parse("$" + ".".join(jsonpath.split("/")))
     matched_values = [match.value for match in path_expr.find(fileObj)]
-    debug("resolveInFile:: matches :: " + str(matched_values[0]))
     return matched_values[0] if len(matched_values) > 0 else None
 
 
 def resolveRefFile(json_dump):
+    """
+    Resolves a ref schema file. If the file is in the cache, returns the contents from the cache.
+    """
     if 'id' in json_dump:
         _id  = json_dump.get('id')
         if _id not in cache:
@@ -58,6 +62,9 @@ def resolveRefFile(json_dump):
 
     
 def parseAsFile(filename):
+    """
+    Opens and resolves a ref schema from file system.
+    """
     json_dump = json.load(open(filename))
     return resolveRefFile(json_dump)
 
@@ -66,11 +73,9 @@ def parseAsHttp(url):
     """
     Use `requests` library to get json located at `url` and call `resolveRefFile` to resolve the $refs in the http-ed json further.
     """
-    debug("parseAsHttp::url -> " + url)
     json_dump = None
     if callable(requests.Response.json):
         json_dump = requests.get(url).json()
-        debug(json_dump)
     else:
         json_dump = requests.get(url).json
     return resolveRefFile(json_dump)
@@ -82,14 +87,12 @@ def parseRef(fragment, value):
     """
     ref_frag = urlparse(value)
     ref_file = ref_frag.netloc + ref_frag.path
-    debug(value)
     # ref_frag ->ParseResult(scheme=u'http', netloc=u'localhost:3000', path=u'/ref_schema.json', params='', query='', fragment=u'/definitions/address')
     
     if ref_frag.scheme in ['http', 'https']:
         # http/https scheme retrieval of $refs
         _url = ref_frag.scheme + "://" + ref_file # -> http://localhost:3000/ref_schema.json
         http_file_json  = parseAsHttp(_url)
-        debug("resolveInFile :: " +ref_frag.fragment)
         return resolveInFile(ref_frag.fragment, http_file_json)
     elif ref_frag.scheme == 'file':
         # local file absolute and relative paths retrieval of $refs
@@ -97,9 +100,9 @@ def parseRef(fragment, value):
             return resolveInFile(ref_frag.fragment,parseAsFile(ref_file))
         else:
             raise Exception("FileNotFoundException:: "+ ref_file)
-    #elif fragment.url_fragments.scheme == "":
+    elif ref_frag.scheme == "":
     # same file internal $ref
-    #    return parseAsFile(fragment.url_fragments.netloc + fragment.url_fragments.path)
+        return resolveInFile(ref_frag.fragment, json.load(open(fragment.url_fragments.path)))
     else:
         raise Exception("Scheme of resolution: " + fragment.url_fragments.scheme + " is currently not supported")
 
@@ -121,9 +124,7 @@ def update(fragment, key, value):
     Either resolves the value part if the key is `$ref` or just resolves the inner element in value recursively.
     """
     if "$ref" == key:
-        debug("update$ref:: " + key)
         parsedResult = parseRef(fragment, value)
-        debug("update$ref to -> "+ str(parseRef(fragment, value)))
         return parsedResult
     else:
         return {key: resolveInnerElement(fragment, value)}
@@ -137,7 +138,6 @@ def parse(fragment, json_dict):
     """
     mut_dict = {}
     for (key,value) in json_dict.iteritems():
-        debug("parse:: " + key)
         mut_dict.update(update(fragment, key, value))
     return mut_dict
 
@@ -150,10 +150,10 @@ def resolve(json_obj):
     if 'id' not in json_obj:
         raise IdError("No `id` field in passed parameter")
     else:
-        debug("resolve::" + json_obj.get('id'))
         return parse(URLFragment(json_obj.get("id")), json_obj)
 
 
 if __name__ == "__main__":
-    ejson = json.load(open('test_schema.json'))
-    print resolve(ejson)
+    self_ref_json = json.load(open('self_ref_test.schema.json'))
+    #ejson = json.load(open('test_schema.json'))
+    print resolve(self_ref_json)
