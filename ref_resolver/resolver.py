@@ -45,18 +45,9 @@ def resolveInFile(fragment, fileObj):
     matched_values = [match.value for match in path_expr.find(fileObj)]
     debug("resolveInFile:: matches :: " + str(matched_values[0]))
     return matched_values[0] if len(matched_values) > 0 else None
-    
-#def parseAsFile(filename):
 
-    
-def parseAsHttp(url):
-    debug("parseAsHttp::url -> " + url)
-    json_dump = None
-    if callable(requests.Response.json):
-        json_dump = requests.get(url).json()
-        debug(json_dump)
-    else:
-        json_dump = requests.get(url).json
+
+def resolveRefFile(json_dump):
     if 'id' in json_dump:
         _id  = json_dump.get('id')
         if _id not in cache:
@@ -64,9 +55,31 @@ def parseAsHttp(url):
         return cache[_id]
     else:
         raise IdError("$ref-ed file has no `id`. Will not continue parsing anything. Go fix it!")
-        
+
+    
+def parseAsFile(filename):
+    json_dump = json.load(open(filename))
+    return resolveRefFile(json_dump)
+
+
+def parseAsHttp(url):
+    """
+    Use `requests` library to get json located at `url` and call `resolveRefFile` to resolve the $refs in the http-ed json further.
+    """
+    debug("parseAsHttp::url -> " + url)
+    json_dump = None
+    if callable(requests.Response.json):
+        json_dump = requests.get(url).json()
+        debug(json_dump)
+    else:
+        json_dump = requests.get(url).json
+    return resolveRefFile(json_dump)
+
 
 def parseRef(fragment, value):
+    """
+    Parse the $ref value and resolve using the scheme of resolution from `urlparse(value)`.
+    """
     ref_frag = urlparse(value)
     ref_file = ref_frag.netloc + ref_frag.path
     debug(value)
@@ -78,35 +91,50 @@ def parseRef(fragment, value):
         http_file_json  = parseAsHttp(_url)
         debug("resolveInFile :: " +ref_frag.fragment)
         return resolveInFile(ref_frag.fragment, http_file_json)
-    #elif fragment.url_fragments.scheme == 'file' and isfile(ref_file):
-    # local file absolute and relative paths retrieval of $refs
-    #    return parseAsFile(ref_file)
+    elif ref_frag.scheme == 'file':
+        # local file absolute and relative paths retrieval of $refs
+        if isfile(ref_file):
+            return resolveInFile(ref_frag.fragment,parseAsFile(ref_file))
+        else:
+            raise Exception("FileNotFoundException:: "+ ref_file)
     #elif fragment.url_fragments.scheme == "":
     # same file internal $ref
     #    return parseAsFile(fragment.url_fragments.netloc + fragment.url_fragments.path)
     else:
         raise Exception("Scheme of resolution: " + fragment.url_fragments.scheme + " is currently not supported")
-        
+
+    
+def resolveInnerElement(fragment, elem):
+    """
+    Resolves inner elements of value attributes. Handles nesting gracefully with standard recursive procedures.
+    """
+    if isinstance(elem, dict):
+        return parse(fragment, elem)
+    elif isinstance(elem, list):
+        return map(lambda x: resolveInnerElement(fragment, x), elem)
+    else:
+        return elem
+    
 
 def update(fragment, key, value):
+    """
+    Either resolves the value part if the key is `$ref` or just resolves the inner element in value recursively.
+    """
     if "$ref" == key:
         debug("update$ref:: " + key)
         parsedResult = parseRef(fragment, value)
         debug("update$ref to -> "+ str(parseRef(fragment, value)))
         return parsedResult
     else:
-        return {key: apropose(fragment, value)}
+        return {key: resolveInnerElement(fragment, value)}
 
-def apropose(fragment, elem):
-    debug("apropose:: ")
-    if isinstance(elem, dict):
-        return parse(fragment, elem)
-    elif isinstance(elem, list):
-        return map(lambda x: apropose(fragment, x), elem)
-    else:
-        return elem
-        
+    
 def parse(fragment, json_dict):
+    """
+    Looks at every key-value pair in `json_dict`, resolves $refs and returns new dictionary
+    containing resolutions.
+    This method is not purely functional. It creates a mutable dictionary and puts things into it. Yuck!
+    """
     mut_dict = {}
     for (key,value) in json_dict.iteritems():
         debug("parse:: " + key)
