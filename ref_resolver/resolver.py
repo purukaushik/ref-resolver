@@ -35,25 +35,33 @@ class URLFragment(object):
         else:
             self.url_fragments = None
 
+    def __str__(self):
+        return repr(self.id + ", " + str(self.url_fragments))
+
 
 def resolveInFile(fragment, fileObj):
-    path_expr = jsonpath_rw.parse("$" + ".".join(fragment.fragment.split("/")))
+    debug("resolveInFile:: fragment->" + fragment)
+    path_expr = jsonpath_rw.parse("$" + ".".join(fragment.split("/")))
     matched_values = [match.value for match in path_expr.find(fileObj)]
+    debug("resolveInFile:: matches :: " + str(matched_values[0]))
     return matched_values[0] if len(matched_values) > 0 else None
     
 #def parseAsFile(filename):
 
     
-def parseAsHttp(url, ref_file):
-    debug("parseAsHttp:: " + url + ", "+ ref_file)
+def parseAsHttp(url):
+    debug("parseAsHttp::url -> " + url)
     json_dump = None
     if callable(requests.Response.json):
         json_dump = requests.get(url).json()
+        debug(json_dump)
     else:
         json_dump = requests.get(url).json
     if 'id' in json_dump:
-        cache[ref_file] = resolve(json_dump)
-        return cache[ref_file]
+        _id  = json_dump.get('id')
+        if _id not in cache:
+            cache[_id] = resolve(json_dump)
+        return cache[_id]
     else:
         raise IdError("$ref-ed file has no `id`. Will not continue parsing anything. Go fix it!")
         
@@ -61,26 +69,31 @@ def parseAsHttp(url, ref_file):
 def parseRef(fragment, value):
     ref_frag = urlparse(value)
     ref_file = ref_frag.netloc + ref_frag.path
-    if ref_file in cache:
-        return cache[ref_file]
+    debug(value)
+    # ref_frag ->ParseResult(scheme=u'http', netloc=u'localhost:3000', path=u'/ref_schema.json', params='', query='', fragment=u'/definitions/address')
+    
+    if ref_frag.scheme in ['http', 'https']:
+        # http/https scheme retrieval of $refs
+        _url = ref_frag.scheme + "://" + ref_file # -> http://localhost:3000/ref_schema.json
+        http_file_json  = parseAsHttp(_url)
+        debug("resolveInFile :: " +ref_frag.fragment)
+        return resolveInFile(ref_frag.fragment, http_file_json)
+    #elif fragment.url_fragments.scheme == 'file' and isfile(ref_file):
+    # local file absolute and relative paths retrieval of $refs
+    #    return parseAsFile(ref_file)
+    #elif fragment.url_fragments.scheme == "":
+    # same file internal $ref
+    #    return parseAsFile(fragment.url_fragments.netloc + fragment.url_fragments.path)
     else:
-        if fragment.url_fragments.scheme in ['http', 'https']:
-            # http/https scheme retrieval of $refs
-            return parseAsHttp(urljoin(fragment.url_fragments.scheme, fragment.id, ref_file), ref_file)
-        #elif fragment.url_fragments.scheme == 'file' and isfile(ref_file):
-            # local file absolute and relative paths retrieval of $refs
-        #    return parseAsFile(ref_file)
-        #elif fragment.url_fragments.scheme == "":
-            # same file internal $ref
-        #    return parseAsFile(fragment.url_fragments.netloc + fragment.url_fragments.path)
-        else:
-            raise Exception("Scheme of resolution: " + fragment.url_fragments.scheme + " is currently not supported")
+        raise Exception("Scheme of resolution: " + fragment.url_fragments.scheme + " is currently not supported")
         
 
 def update(fragment, key, value):
     if "$ref" == key:
         debug("update$ref:: " + key)
-        return parseRef(fragment, value)
+        parsedResult = parseRef(fragment, value)
+        debug("update$ref to -> "+ str(parseRef(fragment, value)))
+        return parsedResult
     else:
         return {key: apropose(fragment, value)}
 
