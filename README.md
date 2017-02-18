@@ -2,6 +2,7 @@
 
 
 [![PyPI version](https://badge.fury.io/py/ref-resolver.svg)](https://badge.fury.io/py/ref-resolver)
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/ref-resolver)
 
 A python API to resolve `$ref` pointers in json-schemas and inline them. Supports relative file paths in `$ref`.
 
