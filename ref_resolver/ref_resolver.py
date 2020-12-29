@@ -13,16 +13,11 @@ cache = {}
 
 class RefResolver:
 
-    def __init__(self):
-        self.url_fragments = None
-
-    def __init__(self, id):
+    def __init__(self, id = None):
         self.id = id
+        self.url_fragments = None
         if id is not None:
             self.url_fragments = urlparse(id)
-        else:
-            self.url_fragments = None
-
 
 
     def resolve(self, json_obj):
